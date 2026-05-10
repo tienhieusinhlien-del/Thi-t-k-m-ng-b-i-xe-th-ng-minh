@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<!-- saved from url=(0046)https://www.hivemq.com/demos/websocket-client/ -->
+<html class="js flexbox canvas canvastext webgl no-touch geolocation postmessage no-websqldatabase indexeddb hashchange history draganddrop websockets rgba hsla multiplebgs backgroundsize borderimage borderradius boxshadow textshadow opacity cssanimations csscolumns cssgradients cssreflections csstransforms csstransforms3d csstransitions fontface generatedcontent video audio localstorage sessionstorage webworkers no-applicationcache svg inlinesvg smil svgclippaths" lang="en"><!--<![endif]--><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Try HiveMQ MQTT browser client – a websocket client that you can use to experiment with publishing and subscribing MQTT messages over port 8000">
+    <title>MQTT Websocket Client</title>
+    <link rel="stylesheet" href="./MQTT Websocket Client_files/normalize.css">
+    <link rel="stylesheet" href="./MQTT Websocket Client_files/style.css">
+    <link rel="stylesheet" href="./MQTT Websocket Client_files/foundation.css">
+    <link rel="stylesheet" href="./MQTT Websocket Client_files/jquery.minicolors.css">
+    <link rel="stylesheet" href="./MQTT Websocket Client_files/jquery.fancybox.min.css">
+<style type="text/css">.fancybox-margin{margin-right:15px;}</style></head>
+<body class="notconnected" style="">
+<div id="header">
+    <div>
+        <a href="https://www.hivemq.com/"><img id="headerlogo" src="./MQTT Websocket Client_files/hivemq-logo.svg" alt="HiveMQ Logo" title="HiveMQ" style="width: 275px; height: 65px"></a>
+        <span id="headertitle">Websockets Client Showcase</span>
+    </div>
+</div>
+<div id="content" class="row">
+<!-- Cloud Banner Start -->
+<div class="row large-12 columns hivemq-cloud">
+<div class="large-12 columns">
+    <a href="https://console.hivemq.cloud/?utm_source=mqtt-web-client&amp;utm_medium=banner&amp;utm_campaign=cloud" title="Get your free HiveMQ Cloud account" class="panel hivemq-cloud-container">
+        <div class="hivemq-cloud-icon">
+            <img src="./MQTT Websocket Client_files/hivemq-cloud.svg" width="150" height="50" alt="HiveMQ Cloud Logo">
+        </div>
+
+        <div class="hivemq-cloud-title">
+            <h3>Need a fully managed MQTT broker?</h3>
+            <p>
+                Get your own Cloud broker and connect up to 100 devices for free.
+            </p>
+        </div>
+
+        <button role="button" class="hivemq-cloud-btn" fdprocessedid="7y975">Get your free account</button>
+    </a>
+</div>
+
+<style>
+.hivemq-cloud {
+    width: 100% !important;
+    margin-bottom: 2rem !important;
+}
+
+.hivemq-cloud-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(90deg, #80b6df 0%, #ebf2f9 40%, #ebf2f9 60%, #80b6df 100%);
+    padding: 0.5rem;
+    gap: 2rem;
+}
+
+.hivemq-cloud-btn {
+    background-color: #ffc000;
+    border-radius: 5px;
+    font-size: 16px;
+    min-width: 140px;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-weight: 400;
+    color: #333;
+    transition: background-color;
+    -webkit-transition: background-color;
+    transition-duration: .25s;
+    display: inline-block;
+    font-weight: bold;
+}
+
+.hivemq-cloud-btn:hover {
+    color: #ffc000;
+    background-color: #333;
+}
+
+.hivemq-cloud-title h3 {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 0 0 0.25rem;
+    line-height: 1;
+}
+
+.hivemq-cloud-title p {
+    font-size: 1rem;
+    color: #444;
+    margin: 0;
+    line-height: 1;
+}
+
+@media only screen and (max-width: 700px) {
+    .hivemq-cloud-container {
+        display: grid;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        background: linear-gradient(90deg, #80b6df 0%, #ebf2f9 40%, #ebf2f9 60%, #80b6df 100%);
+        padding: 1rem;
+        gap: 1rem;
+        border-radius: 5px;
+    }
+}
+</style>
+</div>
+<!-- Cloud Banner End -->
+<div id="connection" class="row large-12 columns">
+
+    <div class="large-8 columns conniTop">
+        <h3>Connection</h3>
+    </div>
+
+    <div class="large-1 columns conniStatus">
+        <div id="connectionStatus"></div>
+    </div>
+
+    <div class="large-2 columns conniArrow">
+        <a class="small bottom conniArrow" onclick="websocketclient.render.toggle(&#39;conni&#39;);">
+            <div class="icon-arrow-chevron"></div>
+        </a>
+    </div>
+    <div class="large-12 columns" id="conniMain">
+        <div class="panel">
+            <div class="row">
+                <form class="custom">
+                    <div class="large-5 columns">
+                        <label>Host</label>
+                        <input id="urlInput" type="text" value="mqtt-dashboard.com" fdprocessedid="bva2ts">
+                    </div>
+
+                    <div class="large-1 columns">
+                        <label>Port</label>
+                        <input id="portInput" type="text" value="8884" fdprocessedid="j0itam">
+                    </div>
+
+                    <div class="large-4 columns">
+                        <label>ClientID</label>
+                        <input id="clientIdInput" type="text" fdprocessedid="j0tajc">
+                    </div>
+
+                    <div class="large-2 columns">
+                        <a id="connectButton" class="small button" onclick="websocketclient.connect();">Connect</a>
+                    </div>
+
+                    <div class="large-2 columns">
+                        <a id="disconnectButton" class="small button" onclick="websocketclient.disconnect();">Disconnect</a>
+                    </div>
+
+                    <div class="large-4 columns">
+                        <label>Username</label>
+                        <input id="userInput" type="text" fdprocessedid="0cb7ie">
+                    </div>
+
+                    <div class="large-3 columns">
+                        <label>Password</label>
+                        <input id="pwInput" type="password" fdprocessedid="cks0bf">
+                    </div>
+
+                    <div class="large-2 columns">
+                        <label>Keep Alive</label>
+                        <input id="keepAliveInput" type="text" value="60" fdprocessedid="max6vjp">
+                    </div>
+
+                    <div class="large-1 columns">
+                        <label>SSL</label>
+                        <input id="sslInput" type="checkbox" checked="checked" class="hidden-field"><span class="custom checkbox checked"></span>
+                    </div>
+
+                    <div class="large-2 columns">
+                        <label>Clean Session</label>
+                        <input class="checky hidden-field" id="cleanSessionInput" type="checkbox" checked="checked" disabled="disabled"><span class="custom checkbox checked disabled"></span>
+                    </div>
+
+                    <div class="large-8 columns">
+                        <label>Last-Will Topic</label>
+                        <input id="lwTopicInput" type="text" fdprocessedid="mwdn4e">
+                    </div>
+
+                    <div class="large-2 columns">
+                        <label>Last-Will QoS</label>
+                        <select id="lwQosInput" class="hidden-field" data-id="1778403301175-fztdb">
+                            <option>0</option>
+                            <option>1</option>
+                            <option>2</option>
+                        </select><div class="custom dropdown" data-id="1778403301175-fztdb"><a href="https://www.hivemq.com/demos/websocket-client/#" class="current">0</a><a href="https://www.hivemq.com/demos/websocket-client/#" class="selector"></a><ul><li class="selected">0</li><li class="">1</li><li class="">2</li></ul></div>
+                    </div>
+
+                    <div class="large-2 columns">
+                        <label>Last-Will Retain</label>
+                        <input class="checky hidden-field" id="LWRInput" type="checkbox"><span class="custom checkbox"></span>
+                    </div>
+
+                    <div class="large-12 columns">
+                        <label>Last-Will Messsage</label>
+                        <textarea id="LWMInput"></textarea>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="empty"></div>
+<div id="publish-sub" class="row large-12 columns">
+    <div class="columns large-8">
+        <div class="large-9 columns publishTop closed">
+            <h3>Publish</h3>
+        </div>
+
+        <div class="large-3 columns publishArrow closed">
+            <a class="small bottom publishArrow closed" onclick="websocketclient.render.toggle(&#39;publish&#39;);">
+                <div class="icon-arrow-chevron"></div>
+            </a>
+        </div>
+
+        <div class="large-12 columns" id="publishMain" style="display: none;">
+
+            <!-- Grid Example -->
+            <div class="row panel" id="publishPanel">
+                <div class="large-12 columns">
+                    <form class="custom">
+                        <div class="row">
+                            <div class="large-6 columns">
+                                <label>Topic</label>
+                                <input id="publishTopic" type="text" value="testtopic/1" fdprocessedid="ixaf4j">
+                            </div>
+                            <div class="large-2 columns">
+                                <label for="publishQoSInput">QoS</label>
+                                <select id="publishQoSInput" class="small hidden-field" data-id="1778403301179-3M5a2">
+                                    <option>0</option>
+                                    <option>1</option>
+                                    <option>2</option>
+                                </select><div class="custom dropdown small" data-id="1778403301179-3M5a2"><a href="https://www.hivemq.com/demos/websocket-client/#" class="current">0</a><a href="https://www.hivemq.com/demos/websocket-client/#" class="selector"></a><ul><li class="selected">0</li><li class="">1</li><li class="">2</li></ul></div>
+                            </div>
+                            <div class="large-2 columns">
+                                <label>Retain</label>
+                                <input id="publishRetain" type="checkbox" class="hidden-field"><span class="custom checkbox"></span>
+                            </div>
+                            <div class="large-2 columns">
+                                <a class="small button" id="publishButton" onclick="websocketclient.publish($(&#39;#publishTopic&#39;).val(),$(&#39;#publishPayload&#39;).val(),parseInt($(&#39;#publishQoSInput&#39;).val(),10),$(&#39;#publishRetain&#39;).is(&#39;:checked&#39;))">Publish</a>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="large-12 columns">
+                                <label>Message</label>
+                                <textarea id="publishPayload"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="empty"></div>
+        <div class="large-9 columns messagesTop closed">
+            <h3>Messages</h3>
+        </div>
+
+        <div class="large-3 columns messagesArrow closed">
+            <a class="small bottom messagesArrow closed" onclick="websocketclient.render.toggle(&#39;messages&#39;);">
+                <div class="icon-arrow-chevron"></div>
+            </a>
+        </div>
+
+        <div class="large-12 columns" id="messagesMain" style="display: none;">
+
+            <!-- Grid Example -->
+            <div class="row panel">
+                <div class="large-12 columns">
+                    <form class="custom">
+                        <!--<div class="row">-->
+                        <!--<div class="large-10 columns">-->
+                        <!--<label>Filter</label>-->
+                        <!--<input id="filterString" type="text">-->
+                        <!--</div>-->
+
+                        <!--<div class="large-2 columns">-->
+                        <!--<a class="small button" id="filterButton"-->
+                        <!--onclick="websocketclient.filter($('#filterString').val())">Filter</a>-->
+                        <!--</div>-->
+                        <!--</div>-->
+
+                    </form>
+                    <div class="row">
+                        <ul id="messEdit" class="disc">
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="columns large-4">
+
+        <div class="large-8 columns subTop closed">
+            <h3>Subscriptions</h3>
+        </div>
+
+        <div class="large-3 columns subArrow closed">
+            <a class="small bottom subArrow closed" onclick="websocketclient.render.toggle(&#39;sub&#39;);">
+                <div class="icon-arrow-chevron"></div>
+            </a>
+        </div>
+        <div class="large-12 columns" id="subMain" style="display: none;">
+            <div class="row panel">
+                <div class="large-12 columns">
+
+                    <a id="addSubButton" href="https://www.hivemq.com/demos/websocket-client/#data" class="small button addSubButton">Add New Topic Subscription</a>
+
+                    <div style="display:none">
+                        <div id="data">
+                            <form class="custom">
+                                <div class="row large-12 columns">
+                                    <div class="large-4 columns">
+                                        <label>Color</label>
+                                        <div class="minicolors minicolors-theme-default minicolors-position-bottom minicolors-position-left"><input class="color minicolors-input" id="colorChooser" type="hidden" size="7" value=""><span class="minicolors-swatch"><span class="minicolors-swatch-color"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider"><div class="minicolors-picker" style="top: 0px;"></div></div><div class="minicolors-opacity-slider"><div class="minicolors-picker"></div></div><div class="minicolors-grid" style="background-color: rgb(255, 0, 0);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 150px; left: 0px;"><div></div></div></div></div></div>
+                                    </div>
+                                    <div class="large-5 columns">
+                                        <label for="QoSInput">QoS</label>
+                                        <select id="QoSInput" class="small hidden-field" data-id="1778403301179-5MhDp">
+                                            <option>2</option>
+                                            <option>1</option>
+                                            <option>0</option>
+                                        </select><div class="custom dropdown small" data-id="1778403301179-5MhDp"><a href="https://www.hivemq.com/demos/websocket-client/#" class="current">2</a><a href="https://www.hivemq.com/demos/websocket-client/#" class="selector"></a><ul><li class="selected">2</li><li class="">1</li><li class="">0</li></ul></div>
+                                    </div>
+                                    <div class="large-3 columns">
+                                        <a class="small button" id="subscribeButton" onclick="if(websocketclient.subscribe($(&#39;#subscribeTopic&#39;).val(),parseInt($(&#39;#QoSInput&#39;).val()),$(&#39;#colorChooser&#39;).val().substring(1))){$.fancybox.close();}">Subscribe</a>
+                                    </div>
+                                </div>
+                                <div class="row large-12 columns">
+                                    <div class="large-12 columns">
+                                        <label>Topic</label>
+                                        <input id="subscribeTopic" type="text" value="testtopic/#">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <ul id="innerEdit" class="disc">
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<script src="./MQTT Websocket Client_files/jquery.min.js.download"></script>
+<script src="./MQTT Websocket Client_files/jquery-ui.min.js.download"></script>
+<script src="./MQTT Websocket Client_files/lodash.min.js.download"></script>
+<script src="./MQTT Websocket Client_files/jquery.fancybox.min.js.download"></script>
+
+<script src="./MQTT Websocket Client_files/foundation.min.js.download"></script>
+<script src="./MQTT Websocket Client_files/foundation.forms.min.js.download"></script>
+<script src="./MQTT Websocket Client_files/modernizr.min.js.download"></script>
+<script src="./MQTT Websocket Client_files/moment.min.js.download"></script>
+<script src="./MQTT Websocket Client_files/jquery.minicolors.min.js.download"></script>
+<script src="./MQTT Websocket Client_files/mqttws31.js.download"></script>
+<script src="./MQTT Websocket Client_files/encoder.js.download"></script>
+<script src="./MQTT Websocket Client_files/app.js.download"></script>
+
+<script>
+
+    function randomString(length) {
+        var text = "";
+        var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        for (var i = 0; i < length; i++)
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        return text;
+    }
+
+    $(document).foundation();
+    $(document).ready(function () {
+
+        $('#clientIdInput').val('clientId-' + randomString(10));
+
+        $('#colorChooser').minicolors();
+
+        $("#addSubButton").fancybox({
+            'afterShow': function () {
+                var rndColor = websocketclient.getRandomColor();
+                $("#colorChooser").minicolors('value', rndColor);
+            }
+        });
+
+        websocketclient.render.toggle('publish');
+        websocketclient.render.toggle('messages');
+        websocketclient.render.toggle('sub');
+    });
+</script>
+
+
+<span id="PING_IFRAME_FORM_DETECTION" style="display: none;"></span></body></html>
