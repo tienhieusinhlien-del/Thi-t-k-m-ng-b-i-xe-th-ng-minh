@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking Pro - Dashboard</title>
+    <!-- Fonts & Icons -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Libraries -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.5);
+            --secondary: #ec4899;
+            --accent: #06b6d4;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            position: fixed;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-link {
+            padding: 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: 0.3s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--text-main);
+        }
+
+        .nav-link i {
+            font-size: 1.2rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .clock-container {
+            background: var(--card-bg);
+            padding: 0.5rem 1.5rem;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 2px;
+            color: var(--accent);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 1.5rem;
+            transition: 0.3s;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-val {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Parking Map */
+        .parking-map {
+            margin-bottom: 2rem;
+        }
+
+        .slots-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .slot {
+            aspect-ratio: 1/1.5;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: 0.3s;
+        }
+
+        .slot.occupied {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .slot.occupied::after {
+            content: '🚗';
+            font-size: 2rem;
+            filter: drop-shadow(0 0 10px var(--danger));
+        }
+
+        .slot-id {
+            position: absolute;
+            top: 5px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+
+        /* Tables & Lists */
+        .history-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .badge-in {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .badge-out {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            color: white;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 20px var(--primary-glow);
+            transform: scale(1.02);
+        }
+
+        .btn-export {
+            background: var(--success);
+            color: white;
+            margin-top: 1rem;
+        }
+
+        /* MQTT Badge */
+        .mqtt-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .dot.online {
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        .dot.offline {
+            background: var(--danger);
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Stats Modal */
+        #statsModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .modal-body {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .chart-container {
+            height: 300px;
+            margin-bottom: 2rem;
+        }
+
+        /* Toast */
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            background: var(--primary);
+            color: white;
+            z-index: 2000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <i class="fas fa-parking"></i>
+            <span>SMART PARK</span>
+        </div>
+        <nav>
+            <a href="#" class="nav-link active" onclick="switchTab('dashboard', this)"><i class="fas fa-home"></i>
+                Dashboard</a>
+            <a href="#" class="nav-link" onclick="switchTab('history', this)"><i class="fas fa-history"></i> Lịch sử</a>
+            <a href="#" class="nav-link" onclick="switchTab('cards', this)"><i class="fas fa-id-card"></i> Thẻ xe</a>
+            <a href="#" class="nav-link" onclick="switchTab('stats-uid', this)"><i class="fas fa-chart-line"></i> Thống
+                kê</a>
+        </nav>
+
+        <div style="margin-top: auto; padding-top: 2rem;">
+            <div class="mqtt-status" style="margin-bottom: 1rem;">
+                <div class="dot offline" id="mqtt-dot"></div>
+                <span id="mqtt-text">MQTT: Offline</span>
+            </div>
+            <a href="/logout" class="nav-link"
+                style="color: var(--danger); justify-content: center; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2);">
+                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header>
+            <div>
+                <h1 style="font-size: 2rem;">Xin chào, Phạm Tuấn👋</h1>
+                <p style="color: var(--text-muted);">Tổng quan bãi đỗ xe của bạn ngay hôm nay.</p>
+            </div>
+            <div class="clock-container" id="clock">00:00:00</div>
+        </header>
+
+        <!-- Stats Overview -->
+        <div data-section="dashboard">
+            <div class="stats-grid">
+                <div class="glass-card">
+                    <div class="stat-label">Tổng số chỗ</div>
+                    <div class="stat-val" id="total_slots">--</div>
+                    <div style="color: var(--text-muted); font-size: 0.8rem;"><i class="fas fa-info-circle"></i> Sức
+                        chứa tối đa</div>
+                </div>
+                <div class="glass-card" style="border-left: 4px solid var(--success);">
+                    <div class="stat-label">Chỗ hiện trống</div>
+                    <div class="stat-val" style="color: var(--success);" id="available_slots">--</div>
+                    <div id="avail-percent" style="color: var(--text-muted); font-size: 0.8rem;">--% Còn lại</div>
+                </div>
+                <div class="glass-card" id="occupancy-card">
+                    <div class="stat-label">Xe trong bãi</div>
+                    <div class="stat-val" style="color: var(--secondary);" id="occupied_count">--</div>
+                    <div style="color: var(--text-muted); font-size: 0.8rem;"><i class="fas fa-car"></i> Đang hoạt động
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Map -->
+            <div class="parking-map glass-card">
+                <h3 style="margin-bottom: 1rem;"><i class="fas fa-map-marked-alt"></i> Sơ đồ bãi đỗ xe thời gian thực
+                </h3>
+                <div class="slots-container" id="parking-slots">
+                    <!-- Slots will be injected here -->
+                </div>
+            </div>
+        </div><!-- end dashboard section -->
+
+        <!-- History Section -->
+        <div data-section="history" style="display:none;">
+            <div class="history-section">
+                <div class="glass-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3><i class="fas fa-clipboard-list"></i> Hoạt động gần đây</h3>
+                        <button class="btn-primary" style="padding: 0.5rem 1rem;"
+                            onclick="window.location.href='/api/export'">
+                            <i class="fas fa-file-export"></i> Xuất CSV
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table id="history-table">
+                            <thead>
+                                <tr>
+                                    <th>ID THẺ</th>
+                                    <th>XE / CHỦ XE</th>
+                                    <th>THỜI GIAN</th>
+                                    <th>HÀNH ĐỘNG</th>
+                                    <th>PHÍ (VNĐ)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- History items -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Card Management -->
+                <div class="glass-card">
+                    <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-search"></i> Tìm kiếm hoạt động xe</h3>
+                    <div class="form-group">
+                        <label class="stat-label">Mã UID Thẻ</label>
+                        <input type="text" id="reg-uid" placeholder="VD: 04E92A...">
+                    </div>
+                    <div class="form-group">
+                        <label class="stat-label">Biển số xe</label>
+                        <input type="text" id="reg-plate" placeholder="VD: 30A-12345">
+                    </div>
+                    <div class="form-group">
+                        <label class="stat-label">Tên chủ xe</label>
+                        <input type="text" id="reg-owner" placeholder="VD: Nguyễn Văn A">
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn-primary" style="flex: 1;" onclick="searchActivityHistory()">
+                            <i class="fas fa-search"></i> Tìm Kiếm
+                        </button>
+                        <button
+                            style="background: rgba(255,255,255,0.08); color: var(--text-muted); padding: 0.8rem 1rem; border: none; border-radius: 10px; cursor: pointer; transition: 0.3s;"
+                            onclick="clearActivitySearch()" title="Xóa lọc"
+                            onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+                            onmouseout="this.style.background='rgba(255,255,255,0.08)'">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="search-info"
+                        style="display:none; font-size: 0.8rem; color: var(--accent); padding: 0.25rem 0;">
+                        <i class="fas fa-filter"></i> <span id="search-info-text"></span>
+                    </div>
+
+                    <h3 style="margin-top: 0.5rem;"><i class="fas fa-users"></i> Thẻ đã đăng ký</h3>
+                    <div id="cards-list" style="max-height: 200px; overflow-y: auto;">
+                        <!-- Registered cards -->
+                    </div>
+                </div>
+            </div>
+        </div><!-- end history section -->
+
+        <!-- Cards Section -->
+        <div data-section="cards" style="display:none;">
+            <div class="glass-card">
+                <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-plus-circle"></i> Đăng ký thẻ mới</h3>
+                <div class="form-group">
+                    <label class="stat-label">Mã UID Thẻ</label>
+                    <input type="text" id="reg-uid2" placeholder="VD: 04E92A...">
+                </div>
+                <div class="form-group">
+                    <label class="stat-label">Biển số xe</label>
+                    <input type="text" id="reg-plate2" placeholder="VD: 30A-12345">
+                </div>
+                <div class="form-group">
+                    <label class="stat-label">Tên chủ xe</label>
+                    <input type="text" id="reg-owner2" placeholder="VD: Nguyễn Văn A">
+                </div>
+                <button class="btn-primary" style="width: 100%; margin-bottom: 2rem;" onclick="registerCard2()">ĐĂNG KÝ
+                    NGAY</button>
+                <h3 style="margin-bottom: 1rem;"><i class="fas fa-users"></i> Danh sách thẻ đã đăng ký</h3>
+                <div id="cards-list2" style="max-height: 500px; overflow-y: auto;"></div>
+            </div>
+        </div><!-- end cards section -->
+
+        <!-- Stats-UID Section -->
+        <div data-section="stats-uid" style="display:none;">
+            <div class="glass-card">
+                <h3 style="margin-bottom: 1rem;"><i class="fas fa-chart-line"></i> Thống kê theo xe</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Chọn một xe từ danh sách để xem biểu đồ chi
+                    tiết:</p>
+                <div id="stats-cards-list" style="max-height: 600px; overflow-y: auto;"></div>
+            </div>
+        </div><!-- end stats section -->
+
+    </div>
+
+    <!-- Statistics Modal -->
+    <div id="statsModal">
+        <div class="modal-body">
+            <span class="close-modal" onclick="closeStats()">&times;</span>
+            <h2 id="modal-title">Thống kê xe: <span>--</span></h2>
+            <p id="modal-info" style="color: var(--text-muted); margin-bottom: 2rem;">Biển số: -- | Chủ xe: --</p>
+
+            <div class="stats-grid">
+                <div class="glass-card" style="padding: 1rem;">
+                    <div class="stat-label">Tổng lượt vào</div>
+                    <div class="stat-val" id="total-entries-stat" style="font-size: 1.5rem;">0</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem;">
+                <h3><i class="fas fa-chart-bar"></i> Tần suất 7 ngày gần nhất</h3>
+                <div class="chart-container">
+                    <canvas id="dayChart"></canvas>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+                <div>
+                    <h3>Lịch sử riêng</h3>
+                    <div class="table-container" style="max-height: 250px;">
+                        <table id="car-history-table">
+                            <!-- Injected -->
+                        </table>
+                    </div>
+                </div>
+                <div>
+                    <canvas id="monthChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">Thông báo từ hệ thống</div>
+
+    <script>
+        const API = window.location.origin;
+        const socket = io();
+        let charts = {};
+
+        // === TAB NAVIGATION ===
+        function switchTab(tabName, linkEl) {
+            // Ẩn tất cả section
+            document.querySelectorAll('[data-section]').forEach(el => el.style.display = 'none');
+            // Bỏ active tất cả nav-link
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            // Hiện section được chọn
+            const section = document.querySelector(`[data-section="${tabName}"]`);
+            if (section) section.style.display = 'block';
+            // Đánh dấu active link được click
+            if (linkEl) linkEl.classList.add('active');
+            // Nếu vào tab cards hoặc stats thì render lại
+            if (tabName === 'cards') renderCards2(currentCards);
+            if (tabName === 'stats-uid') renderStatsCards(currentAllCars);
+            return false;
+        }
+
+        let currentCards = {};
+        let currentAllCars = {};
+
+        // === INITIALIZATION ===
+        document.addEventListener('DOMContentLoaded', () => {
+            // Mặc định hiện dashboard, ẩn các section khác
+            document.querySelectorAll('[data-section]').forEach(el => {
+                if (el.dataset.section !== 'dashboard') el.style.display = 'none';
+            });
+            updateClock();
+            setInterval(updateClock, 1000);
+            fetchData();
+        });
+
+        // === CORE DATA FETCH ===
+        async function fetchData() {
+            try {
+                const res = await fetch(`${API}/api/status?_t=${Date.now()}`);
+                const data = await res.json();
+
+                currentCards = data.danh_sach_the || {};
+                currentAllCars = data.tat_ca_xe || {};
+
+                renderDashboard(data);
+                renderCards(data.danh_sach_the || {});
+            } catch (e) {
+                console.error("Lỗi tải dữ liệu tải:", e);
+            }
+        }
+
+        function renderDashboard(data) {
+            document.getElementById('total_slots').innerText = data.tong_so_cho;
+            document.getElementById('available_slots').innerText = data.so_cho_trong;
+            document.getElementById('occupied_count').innerText = data.tong_so_cho - data.so_cho_trong;
+
+            const perc = Math.round((data.so_cho_trong / data.tong_so_cho) * 100);
+            document.getElementById('avail-percent').innerText = `${perc}% Còn trống`;
+
+            // Update Map
+            const mapContainer = document.getElementById('parking-slots');
+            mapContainer.innerHTML = '';
+
+            // Map occupied UIDs to slots
+            const occupiedUids = Object.keys(data.danh_sach_xe_trong_bai);
+            for (let i = 1; i <= data.tong_so_cho; i++) {
+                const isOccupied = i <= occupiedUids.length;
+                const div = document.createElement('div');
+                div.className = `slot ${isOccupied ? 'occupied' : ''}`;
+                div.innerHTML = `<span class="slot-id">VỊ TRÍ P${i}</span>`;
+                if (isOccupied) {
+                    div.title = `Xe: ${occupiedUids[i - 1]}`;
+                    div.style.cursor = 'pointer';
+                    div.onclick = () => showStats(occupiedUids[i - 1]);
+                }
+                mapContainer.appendChild(div);
+            }
+
+            // Update History
+            renderHistory(data.lich_su_hoat_dong);
+
+            // MQTT
+            updateMqttStatus(data.mqtt_connected);
+        }
+
+        function renderHistory(history) {
+            const tbody = document.querySelector('#history-table tbody');
+            if (!history) return;
+            // Lưu toàn bộ lịch sử vào biến toàn cục để tìm kiếm
+            allHistoryData = history;
+            tbody.innerHTML = '';
+            [...history].reverse().forEach(item => {
+                const isEntry = item.hanh_dong.includes('VÀO');
+                const row = `
+                    <tr>
+                        <td><code style="color: var(--accent);">${item.uid}</code></td>
+                        <td>
+                            <div style="font-weight: 600; color: var(--accent); cursor: pointer" onclick="showStats('${item.uid}')">
+                                ${item.bien_so || item.uid}
+                            </div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted)">${item.ten_chu_xe || 'Khách'}</div>
+                        </td>
+                        <td>${item.thoi_gian}</td>
+                        <td><span class="badge ${isEntry ? 'badge-in' : 'badge-out'}">${item.hanh_dong}</span></td>
+                        <td>${item.phi_gui_xe ? item.phi_gui_xe.toLocaleString() : '--'}</td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        function renderCards(cards) {
+            currentCards = cards; // lưu lại để tab Cards/Stats dùng
+            const container = document.getElementById('cards-list');
+            container.innerHTML = '';
+            Object.entries(cards).forEach(([uid, info]) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 12px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);';
+                div.innerHTML = `
+                    <div style="cursor: pointer" onclick="showStats('${uid}')">
+                        <div style="font-weight: 600;">${info.bien_so}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">${uid} | ${info.ten_chu_xe}</div>
+                    </div>
+                    <button style="background: var(--danger); padding: 5px 10px; font-size: 0.7rem;" onclick="deleteCard('${uid}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // === TAB: CARDS ===
+        function renderCards2(cards) {
+            const container = document.getElementById('cards-list2');
+            if (!container) return;
+            container.innerHTML = '';
+            if (Object.keys(cards).length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Chưa có thẻ nào được đăng ký.</p>';
+                return;
+            }
+            Object.entries(cards).forEach(([uid, info]) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 12px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);';
+                div.innerHTML = `
+                    <div style="cursor: pointer" onclick="showStats('${uid}')">
+                        <div style="font-weight: 600;">${info.bien_so}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">${uid} | ${info.ten_chu_xe}</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">Đăng ký: ${info.ngay_dang_ky || '--'}</div>
+                    </div>
+                    <button style="background: var(--danger); padding: 5px 10px; font-size: 0.7rem;" onclick="deleteCard('${uid}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function registerCard2() {
+            const uid = document.getElementById('reg-uid2').value.trim();
+            const plate = document.getElementById('reg-plate2').value.trim();
+            const owner = document.getElementById('reg-owner2').value.trim();
+            if (!uid || !plate || !owner) return showToast('Vui lòng điền đủ thông tin!');
+            const res = await fetch(`${API}/api/cards/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid, bien_so: plate, ten_chu_xe: owner })
+            });
+            if (res.ok) {
+                showToast('Đã đăng ký thành công!');
+                document.getElementById('reg-uid2').value = '';
+                document.getElementById('reg-plate2').value = '';
+                document.getElementById('reg-owner2').value = '';
+                await fetchData();
+                renderCards2(currentCards);
+            }
+        }
+
+        // === TAB: THỐNG KÊ ===
+        function renderStatsCards(cards) {
+            const container = document.getElementById('stats-cards-list');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!cards || Object.keys(cards).length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Chưa có dữ liệu thống kê.</p>';
+                return;
+            }
+            Object.entries(cards).forEach(([uid, info]) => {
+                const badge = info.is_guest
+                    ? '<span class="badge badge-out" style="margin-left: 8px; font-size: 0.6rem;">Khách vãng lai</span>'
+                    : '<span class="badge badge-in" style="margin-left: 8px; font-size: 0.6rem;">Đã ĐK</span>';
+
+                const div = document.createElement('div');
+                div.style.cssText = 'background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 12px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); cursor: pointer;';
+                div.innerHTML = `
+                    <div style="flex: 1;" onclick="showStats('${uid}')">
+                        <div style="font-weight: 600; display: flex; align-items: center;">${info.bien_so} ${badge}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;"><code style="color:var(--accent);">${uid}</code> | ${info.ten_chu_xe}</div>
+                    </div>
+                    <button class="btn-primary" style="padding: 5px 14px; font-size: 0.8rem;" onclick="showStats('${uid}')">
+                        <i class="fas fa-chart-bar"></i> Xem
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+
+        // === STATS & MODAL ===
+        async function showStats(uid) {
+            try {
+                const res = await fetch(`${API}/api/stats/${uid}`);
+                const data = await res.json();
+
+                document.getElementById('modal-title').querySelector('span').innerText = uid;
+                document.getElementById('modal-info').innerText = `Biển số: ${data.info.bien_so || '--'} | Chủ xe: ${data.info.ten_chu_xe || '--'}`;
+                document.getElementById('total-entries-stat').innerText = data.total_entries;
+
+                // Day Chart
+                updateChart('dayChart', 'Lượt vào theo ngày', Object.keys(data.by_day).reverse(), Object.values(data.by_day).reverse(), 'bar', '#6366f1');
+
+                // Month Chart
+                updateChart('monthChart', 'Lượt vào theo tháng', Object.keys(data.by_month), Object.values(data.by_month), 'line', '#ec4899');
+
+                // History table
+                const hTable = document.getElementById('car-history-table');
+                hTable.innerHTML = '<thead><tr><th>TG</th><th>HÀNH ĐỘNG</th></tr></thead><tbody>';
+                data.history.forEach(h => {
+                    hTable.innerHTML += `<tr><td>${h.thoi_gian}</td><td>${h.hanh_dong}</td></tr>`;
+                });
+                hTable.innerHTML += '</tbody>';
+
+                document.getElementById('statsModal').style.display = 'flex';
+            } catch (e) {
+                showToast("Lỗi tải thống kê!");
+            }
+        }
+
+        function updateChart(id, label, labels, data, type, color) {
+            if (charts[id]) charts[id].destroy();
+            const ctx = document.getElementById(id).getContext('2d');
+            charts[id] = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        borderColor: color,
+                        backgroundColor: color + '44',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false } },
+                        x: { grid: { display: false }, border: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function closeStats() { document.getElementById('statsModal').style.display = 'none'; }
+
+        // === HISTORY SEARCH ===
+        let allHistoryData = [];
+
+        function filterHistory(keyword) {
+            const kw = keyword.trim().toLowerCase();
+            const summary = document.getElementById('search-summary');
+            const resultsBox = document.getElementById('history-search-results');
+            const kwSpan = document.getElementById('search-keyword');
+            const countSpan = document.getElementById('search-count');
+
+            if (!kw) {
+                summary.style.display = 'none';
+                resultsBox.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 2rem 0;">
+                    <i class="fas fa-car" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
+                    Nhập từ khóa để tìm hoạt động xe
+                </p>`;
+                return;
+            }
+
+            const matched = allHistoryData.filter(item =>
+                (item.uid || '').toLowerCase().includes(kw) ||
+                (item.bien_so || '').toLowerCase().includes(kw) ||
+                (item.ten_chu_xe || '').toLowerCase().includes(kw)
+            );
+
+            kwSpan.textContent = keyword;
+            countSpan.textContent = matched.length;
+            summary.style.display = 'block';
+
+            if (matched.length === 0) {
+                resultsBox.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 2rem 0;">
+                    <i class="fas fa-search-minus" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
+                    Không tìm thấy kết quả
+                </p>`;
+                return;
+            }
+
+            resultsBox.innerHTML = '';
+            [...matched].reverse().forEach(item => {
+                const isEntry = (item.hanh_dong || '').includes('VÀO');
+                const badgeClass = isEntry ? 'badge-in' : 'badge-out';
+                const card = document.createElement('div');
+                card.style.cssText = 'background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem 1rem; cursor: pointer; transition: 0.2s;';
+                card.onmouseenter = () => card.style.borderColor = 'var(--primary)';
+                card.onmouseleave = () => card.style.borderColor = 'var(--border)';
+                card.onclick = () => showStats(item.uid);
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="font-weight: 600; color: var(--accent);">${item.bien_so || item.uid}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                                <code style="color: var(--accent); opacity: 0.7;">${item.uid}</code> &nbsp;|&nbsp; ${item.ten_chu_xe || 'Khách'}
+                            </div>
+                            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+                                <i class="fas fa-clock" style="font-size: 0.65rem;"></i> ${item.thoi_gian}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="badge ${badgeClass}">${item.hanh_dong}</span>
+                            ${item.phi_gui_xe ? `<div style="font-size: 0.75rem; color: var(--warning); margin-top: 4px; font-weight: 600;">${item.phi_gui_xe.toLocaleString()} đ</div>` : ''}
+                        </div>
+                    </div>
+                `;
+                resultsBox.appendChild(card);
+            });
+        }
+
+        function clearHistorySearch() {
+            document.getElementById('history-search').value = '';
+            filterHistory('');
+        }
+
+        // === ACTIONS ===
+        async function registerCard() {
+            const uid = document.getElementById('reg-uid').value.trim();
+            const plate = document.getElementById('reg-plate').value.trim();
+            const owner = document.getElementById('reg-owner').value.trim();
+            if (!uid || !plate || !owner) return showToast('Vui lòng điền đủ thông tin!');
+            const res = await fetch(`${API}/api/cards/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid, bien_so: plate, ten_chu_xe: owner })
+            });
+            if (res.ok) {
+                showToast('Đã đăng ký thành công!');
+                document.getElementById('reg-uid').value = '';
+                document.getElementById('reg-plate').value = '';
+                document.getElementById('reg-owner').value = '';
+                await fetchData();
+            }
+        }
+
+        // === TÌM KIẾM HOẠT ĐỘNG XE ===
+        function searchActivityHistory() {
+            const uid = document.getElementById('reg-uid').value.trim().toLowerCase();
+            const plate = document.getElementById('reg-plate').value.trim().toLowerCase();
+            const owner = document.getElementById('reg-owner').value.trim().toLowerCase();
+
+            if (!uid && !plate && !owner) {
+                showToast('Nhập ít nhất 1 tiêu chí để tìm kiếm!');
+                return;
+            }
+
+            const filtered = allHistoryData.filter(item => {
+                const matchUid = !uid || (item.uid || '').toLowerCase().includes(uid);
+                const matchPlate = !plate || (item.bien_so || '').toLowerCase().includes(plate);
+                const matchOwner = !owner || (item.ten_chu_xe || '').toLowerCase().includes(owner);
+                return matchUid && matchPlate && matchOwner;
+            });
+
+            renderHistory(filtered);
+
+            const parts = [];
+            if (uid) parts.push(`UID: "${uid}"`);
+            if (plate) parts.push(`Biển số: "${plate}"`);
+            if (owner) parts.push(`Chủ xe: "${owner}"`);
+            const info = document.getElementById('search-info');
+            document.getElementById('search-info-text').textContent = `${parts.join(' • ')} — ${filtered.length} kết quả`;
+            info.style.display = 'block';
+
+            showToast(`Tìm thấy ${filtered.length} hoạt động`);
+        }
+
+        function clearActivitySearch() {
+            document.getElementById('reg-uid').value = '';
+            document.getElementById('reg-plate').value = '';
+            document.getElementById('reg-owner').value = '';
+            document.getElementById('search-info').style.display = 'none';
+            renderHistory(allHistoryData); // khôi phục toàn bộ lịch sử
+            showToast('Dữ liệu đã được khôi phục');
+        }
+
+        function renderCards(cards) {
+            currentCards = cards;
+            const container = document.getElementById('cards-list');
+            if (!container) return;
+            container.innerHTML = '';
+            if (Object.keys(cards).length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:1rem;">Chưa có thẻ nào.</p>';
+                return;
+            }
+            Object.entries(cards).forEach(([uid, info]) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'background: rgba(255,255,255,0.03); padding: 0.8rem 1rem; border-radius: 12px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);';
+                div.innerHTML = `
+                    <div style="cursor: pointer" onclick="showStats('${uid}')">
+                        <div style="font-weight: 600;">${info.bien_so}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">${uid} | ${info.ten_chu_xe}</div>
+                    </div>
+                    <button style="background: var(--danger); padding: 5px 10px; font-size: 0.7rem;" onclick="deleteCard('${uid}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function deleteCard(uid) {
+            if (!confirm("Xác nhận xoá thẻ?")) return;
+            const res = await fetch(`${API}/api/cards/${uid}`, { method: 'DELETE' });
+            if (res.ok) {
+                showToast("Đã xoá thẻ!");
+                fetchData();
+            }
+        }
+
+        // === UTILS ===
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
+        }
+
+        function updateMqttStatus(connected) {
+            const dot = document.getElementById('mqtt-dot');
+            const txt = document.getElementById('mqtt-text');
+            dot.className = `dot ${connected ? 'online' : 'offline'}`;
+            txt.innerText = connected ? 'MQTT: Connected' : 'MQTT: Offline';
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // === SOCKET EVENT ===
+        socket.on('parking_update', (data) => {
+            showToast(`${data.action}: ${data.bien_so || data.uid}`);
+            
+            if (data.lich_su_hoat_dong) {
+                data.status.lich_su_hoat_dong = data.lich_su_hoat_dong;
+                currentCards = data.danh_sach_the || currentCards;
+                currentAllCars = data.tat_ca_xe || currentAllCars;
+            }
+
+            renderDashboard(data.status); // High performance: Full status update on event
+            
+            // Xử lý auto-update nếu đang search lịch sử
+            const searchInfo = document.getElementById('search-info');
+            if (searchInfo && searchInfo.style.display !== 'none' && data.lich_su_hoat_dong) {
+                allHistoryData = data.lich_su_hoat_dong;
+                searchActivityHistory();
+            } else if (data.lich_su_hoat_dong) {
+                renderCards(data.danh_sach_the || {});
+            }
+
+            // Tự động update cho tab Thẻ xe và Thống kê nếu đang được mở
+            const cardsTab = document.querySelector('[data-section="cards"]');
+            if (cardsTab && cardsTab.style.display !== 'none') renderCards2(currentCards);
+
+            const statsTab = document.querySelector('[data-section="stats-uid"]');
+            if (statsTab && statsTab.style.display !== 'none') renderStatsCards(currentAllCars);
+
+            // Tự động update popup Lịch sử riêng nếu đang mở cho xe vừa tương tác
+            const statsModal = document.getElementById('statsModal');
+            if (statsModal && statsModal.style.display === 'flex') {
+                const modalSpan = document.getElementById('modal-title').querySelector('span');
+                if (modalSpan && modalSpan.innerText === data.uid) {
+                    showStats(data.uid);
+                }
+            }
+        });
+
+        socket.on('mqtt_status', (data) => {
+            updateMqttStatus(data.connected);
+        });
+
+        // === AUTO RECONNECT & POLLING ===
+        socket.on('disconnect', () => {
+            showToast('⚠️ Mất kết nối server, đang kết nối lại...');
+            document.getElementById('mqtt-dot').className = 'dot offline';
+            document.getElementById('mqtt-text').innerText = 'Server: Offline';
+        });
+
+        socket.on('connect', () => {
+            fetchData(); // Load lại dữ liệu ngay khi reconnect
+        });
+
+        // Polling dự phòng mỗi 15 giây phòng khi socket bị đơ
+        setInterval(() => {
+            if (socket.connected) fetchData();
+        }, 15000);
+
+
+    </script>
+</body>
+
+</html>
